@@ -1,6 +1,11 @@
-const Database = require("better-sqlite3");
+import Database from "better-sqlite3";
 
-const createDbRuntime = ({ moviesDbPath, ratingsDbPath }) => {
+type CreateDbRuntimeInput = {
+  moviesDbPath: string;
+  ratingsDbPath: string;
+};
+
+export const createDbRuntime = ({ moviesDbPath, ratingsDbPath }: CreateDbRuntimeInput) => {
   const moviesDb = new Database(moviesDbPath, { readonly: true });
   const ratingsDb = new Database(ratingsDbPath, { readonly: true });
 
@@ -12,8 +17,4 @@ const createDbRuntime = ({ moviesDbPath, ratingsDbPath }) => {
       ratingsDb.close();
     },
   };
-};
-
-module.exports = {
-  createDbRuntime,
 };

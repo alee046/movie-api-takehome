@@ -1,6 +1,5 @@
-const request = require("supertest");
-
-const { init } = require("../src/server");
+import request from "supertest";
+import { init } from "../src/server";
 
 describe("User Story: List All Movies", () => {
   test("GET /movies returns first page with required columns", async () => {
@@ -16,13 +15,14 @@ describe("User Story: List All Movies", () => {
 
       const firstMovie = response.body.data[0];
       expect(Object.keys(firstMovie)).toEqual([
+        "movieId",
         "imdbId",
         "title",
         "genres",
         "releaseDate",
         "budget",
       ]);
-      expect(firstMovie.budget).toMatch(/^\$[\d,]+$/); //formats to dollar
+      expect(firstMovie.budget).toMatch(/^\$[\d,]+$/);
       expect(Array.isArray(firstMovie.genres)).toBe(true);
       expect(firstMovie.genres.length).toBeGreaterThan(0);
       expect(firstMovie.genres[0]).toEqual(
@@ -41,7 +41,7 @@ describe("User Story: List All Movies", () => {
 
     try {
       const page1 = await request(app).get("/movies?page=1");
-      const page2 = await request(app).get("/movies?page=2"); //paginates
+      const page2 = await request(app).get("/movies?page=2");
 
       expect(page2.status).toBe(200);
       expect(page2.body.pagination.page).toBe(2);
@@ -71,7 +71,7 @@ describe("User Story: Movie Details", () => {
           releaseDate: expect.any(String),
           budget: expect.stringMatching(/^\$[\d,]+$/),
           runtime: expect.any(Number),
-          averageRating: expect.any(Number), //pulls rating from rating DB
+          averageRating: expect.any(Number),
           genres: expect.any(Array),
           originalLanguage: expect.any(String),
           productionCompanies: expect.any(Array),
@@ -123,6 +123,7 @@ describe("User Story: Movies By Year", () => {
 
       const firstMovie = response.body.data[0];
       expect(Object.keys(firstMovie)).toEqual([
+        "movieId",
         "imdbId",
         "title",
         "genres",
@@ -133,7 +134,7 @@ describe("User Story: Movies By Year", () => {
 
       const firstDate = response.body.data[0].releaseDate;
       const secondDate = response.body.data[1].releaseDate;
-      expect(firstDate <= secondDate).toBe(true); //ascending order by default
+      expect(firstDate <= secondDate).toBe(true);
     } finally {
       close();
     }
@@ -167,7 +168,7 @@ describe("User Story: Movies By Year", () => {
 
       const firstDate = response.body.data[0].releaseDate;
       const secondDate = response.body.data[1].releaseDate;
-      expect(firstDate >= secondDate).toBe(true); //descending order
+      expect(firstDate >= secondDate).toBe(true);
     } finally {
       close();
     }
@@ -188,6 +189,7 @@ describe("User Story: Movies By Genre", () => {
 
       const firstMovie = response.body.data[0];
       expect(Object.keys(firstMovie)).toEqual([
+        "movieId",
         "imdbId",
         "title",
         "genres",
@@ -196,11 +198,9 @@ describe("User Story: Movies By Genre", () => {
       ]);
       expect(firstMovie.budget).toMatch(/^\$[\d,]+$/);
       expect(Array.isArray(firstMovie.genres)).toBe(true);
-      expect(//all movies returned are of the requested genre
-        response.body.data.every((movie) =>
-          movie.genres.some(
-            (genre) => String(genre.name).toLowerCase() === "drama"
-          )
+      expect(
+        response.body.data.every((movie: { genres: Array<{ name: string }> }) =>
+          movie.genres.some((genre) => String(genre.name).toLowerCase() === "drama")
         )
       ).toBe(true);
     } finally {

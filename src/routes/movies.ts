@@ -1,34 +1,18 @@
-const express = require("express");
-const { z, ZodError } = require("zod");
+import express, { NextFunction, Request, Response } from "express";
+import { ZodError } from "zod";
+import type { MoviesService } from "../services/movies";
+import {
+  listMoviesQuerySchema,
+  moviesByYearParamsSchema,
+  moviesByYearQuerySchema,
+  moviesByGenreParamsSchema,
+  movieDetailsParamsSchema,
+} from "./movies.schema";
 
-const listMoviesQuerySchema = z.object({
-  page: z.coerce.number().int().positive().catch(1),
-});
-
-const moviesByYearParamsSchema = z.object({
-  year: z.string().trim().regex(/^\d{4}$/, "Path parameter 'year' must be YYYY."),
-});
-
-const moviesByYearQuerySchema = z.object({
-  page: z.coerce.number().int().positive().catch(1),
-  sort: z.enum(["asc", "desc"]).catch("asc"),
-});
-
-const moviesByGenreParamsSchema = z.object({
-  genre: z.string().trim().min(1, "Path parameter 'genre' is required."),
-});
-
-const movieDetailsParamsSchema = z.object({
-  movieId: z.coerce
-    .number()
-    .int()
-    .positive("Path parameter 'movieId' must be a positive integer."),
-});
-
-const createMoviesRouter = ({ moviesService }) => {
+export const createMoviesRouter = ({ moviesService }: { moviesService: MoviesService }) => {
   const router = express.Router();
 
-  router.get("/", ({ query }, response, next) => {
+  router.get("/", ({ query }: Request, response: Response, next: NextFunction) => {
     try {
       const { page } = listMoviesQuerySchema.parse(query);
       const result = moviesService.listAllMovies({ page });
@@ -42,7 +26,7 @@ const createMoviesRouter = ({ moviesService }) => {
     }
   });
 
-  router.get("/year/:year", ({ params, query }, response, next) => {
+  router.get("/year/:year", ({ params, query }: Request, response: Response, next: NextFunction) => {
     try {
       const { year } = moviesByYearParamsSchema.parse(params);
       const { page, sort } = moviesByYearQuerySchema.parse(query);
@@ -57,7 +41,7 @@ const createMoviesRouter = ({ moviesService }) => {
     }
   });
 
-  router.get("/genre/:genre", ({ params, query }, response, next) => {
+  router.get("/genre/:genre", ({ params, query }: Request, response: Response, next: NextFunction) => {
     try {
       const { genre } = moviesByGenreParamsSchema.parse(params);
       const { page } = listMoviesQuerySchema.parse(query);
@@ -72,7 +56,7 @@ const createMoviesRouter = ({ moviesService }) => {
     }
   });
 
-  router.get("/:movieId", ({ params }, response, next) => {
+  router.get("/:movieId", ({ params }: Request, response: Response, next: NextFunction) => {
     try {
       const { movieId } = movieDetailsParamsSchema.parse(params);
       const movieDetails = moviesService.getMovieDetails({ movieId });
@@ -93,8 +77,4 @@ const createMoviesRouter = ({ moviesService }) => {
   });
 
   return router;
-};
-
-module.exports = {
-  createMoviesRouter,
 };

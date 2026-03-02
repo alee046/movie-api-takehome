@@ -1,19 +1,17 @@
-const { config } = require("./config");
-const { createDbRuntime } = require("./db");
-const { createMoviesService } = require("./services/movies");
-const { createMoviesRepository } = require("./repositories/movies");
-const { createRatingsRepository } = require("./repositories/ratings");
-const { createApp } = require("./app");
+import { config } from "./config";
+import { createDbRuntime } from "./db";
+import { createMoviesService } from "./services/movies";
+import { createMoviesRepository } from "./repositories/movies";
+import { createRatingsRepository } from "./repositories/ratings";
+import { createApp } from "./app";
 
-const init = () => {
+export const init = () => {
   const dbRuntime = createDbRuntime({
     moviesDbPath: config.moviesDbPath,
     ratingsDbPath: config.ratingsDbPath,
   });
   const moviesRepository = createMoviesRepository({ moviesDb: dbRuntime.moviesDb });
-  const ratingsRepository = createRatingsRepository({
-    ratingsDb: dbRuntime.ratingsDb,
-  });
+  const ratingsRepository = createRatingsRepository({ ratingsDb: dbRuntime.ratingsDb });
   const moviesService = createMoviesService({
     moviesRepository,
     ratingsRepository,
@@ -26,7 +24,7 @@ const init = () => {
   };
 };
 
-function main() {
+export function main() {
   const { app, close } = init();
 
   const server = app.listen(config.port, () => {
@@ -46,8 +44,3 @@ function main() {
 if (require.main === module) {
   main();
 }
-
-module.exports = {
-  init,
-  main,
-};

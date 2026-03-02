@@ -1,9 +1,12 @@
-const { createMoviesService } = require("../src/services/movies");
+import { createMoviesService } from "../src/services/movies";
 
 describe("Unit: movies service", () => {
   test("listAllMovies defaults page to 1 and requests first 50 rows", () => {
     const moviesRepository = {
       listAll: jest.fn().mockReturnValue([]),
+      listByYear: jest.fn(),
+      listByGenre: jest.fn(),
+      findByMovieId: jest.fn(),
     };
     const ratingsRepository = {
       getAverageForMovieId: jest.fn(),
@@ -27,6 +30,8 @@ describe("Unit: movies service", () => {
     const moviesRepository = {
       listAll: jest.fn(),
       listByYear: jest.fn().mockReturnValue([]),
+      listByGenre: jest.fn(),
+      findByMovieId: jest.fn(),
     };
     const ratingsRepository = {
       getAverageForMovieId: jest.fn(),
@@ -38,7 +43,7 @@ describe("Unit: movies service", () => {
 
     const result = moviesService.listMoviesByYear({
       year: "2014",
-      page: "2",
+      page: 2,
       sort: "desc",
     });
 
@@ -78,7 +83,7 @@ describe("Unit: movies service", () => {
       ratingsRepository,
     });
 
-    const result = moviesService.getMovieDetails({ movieId: "11" });
+    const result = moviesService.getMovieDetails({ movieId: 11 });
 
     expect(moviesRepository.findByMovieId).toHaveBeenCalledWith({ movieId: 11 });
     expect(ratingsRepository.getAverageForMovieId).toHaveBeenCalledWith({
@@ -114,7 +119,7 @@ describe("Unit: movies service", () => {
       ratingsRepository,
     });
 
-    const result = moviesService.getMovieDetails({ movieId: "999999" });
+    const result = moviesService.getMovieDetails({ movieId: 999999 });
 
     expect(result).toBeNull();
     expect(ratingsRepository.getAverageForMovieId).not.toHaveBeenCalled();
