@@ -6,6 +6,17 @@ const createMoviesRepository = ({ moviesDb }) => {
      LIMIT ? OFFSET ?`
   );
   const listByYearStatementCache = new Map();
+  const listByGenreStatement = moviesDb.prepare(
+    `SELECT imdbId, title, genres, releaseDate, budget
+     FROM movies
+     WHERE EXISTS (
+       SELECT 1
+       FROM json_each(movies.genres) AS genre
+       WHERE lower(json_extract(genre.value, '$.name')) = lower(?)
+     )
+     ORDER BY movieId ASC
+     LIMIT ? OFFSET ?`
+  );
   const movieDetailsStatement = moviesDb.prepare(
     `SELECT movieId, imdbId, title, overview, releaseDate, budget, runtime, language, genres, productionCompanies
      FROM movies
@@ -35,6 +46,8 @@ const createMoviesRepository = ({ moviesDb }) => {
       const sortOrder = descending ? "DESC" : "ASC";
       return getListByYearStatement({ sortOrder }).all(year, limit, offset);
     },
+    listByGenre: ({ genre, limit, offset }) =>
+      listByGenreStatement.all(genre, limit, offset),
     findByMovieId: ({ movieId }) => movieDetailsStatement.get(movieId),
   };
 };

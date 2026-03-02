@@ -1,64 +1,35 @@
-const PAGE_SIZE = 50;
-
-const parseJsonArray = (rawValue) => {
-  try {
-    const parsed = JSON.parse(rawValue || "[]");
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-};
-
-const formatBudget = (budget) =>
-  `$${Number(budget || 0).toLocaleString("en-US")}`;
+const {
+  MOVIES_PAGE_SIZE,
+  parseJsonArray,
+  formatBudget,
+  formatListItem,
+} = require("../utils");
 
 const createMoviesService = ({ moviesRepository, ratingsRepository }) => {
-  const formatListItem = ({ imdbId, title, genres, releaseDate, budget }) => ({
-    imdbId,
-    title,
-    genres: parseJsonArray(genres),
-    releaseDate,
-    budget: formatBudget(budget),
-  });
-
   const listAllMovies = ({ page }) => {
     const pageNumber = Number(page || 1);
-    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
-      throw new Error("Query parameter 'page' must be a positive integer.");
-    }
 
-    const offset = (pageNumber - 1) * PAGE_SIZE;
-    const rows = moviesRepository.listAll({ limit: PAGE_SIZE, offset });
+    const offset = (pageNumber - 1) * MOVIES_PAGE_SIZE;
+    const rows = moviesRepository.listAll({ limit: MOVIES_PAGE_SIZE, offset });
 
     return {
       data: rows.map(formatListItem),
       pagination: {
         page: pageNumber,
-        pageSize: PAGE_SIZE,
+        pageSize: MOVIES_PAGE_SIZE,
       },
     };
   };
 
   const listMoviesByYear = ({ year, page, sort }) => {
-    const yearNumber = Number(year);
-    if (!Number.isInteger(yearNumber) || yearNumber < 1800 || yearNumber > 3000) {
-      throw new Error("Path parameter 'year' must be a valid year.");
-    }
-
+    const yearValue = String(year);
     const pageNumber = Number(page || 1);
-    if (!Number.isInteger(pageNumber) || pageNumber < 1) {
-      throw new Error("Query parameter 'page' must be a positive integer.");
-    }
-
     const sortDirection = String(sort || "asc").toLowerCase();
-    if (sortDirection !== "asc" && sortDirection !== "desc") {
-      throw new Error("Query parameter 'sort' must be 'asc' or 'desc'.");
-    }
 
-    const offset = (pageNumber - 1) * PAGE_SIZE;
+    const offset = (pageNumber - 1) * MOVIES_PAGE_SIZE;
     const rows = moviesRepository.listByYear({
-      year: String(yearNumber),
-      limit: PAGE_SIZE,
+      year: yearValue,
+      limit: MOVIES_PAGE_SIZE,
       offset,
       descending: sortDirection === "desc",
     });
@@ -67,16 +38,33 @@ const createMoviesService = ({ moviesRepository, ratingsRepository }) => {
       data: rows.map(formatListItem),
       pagination: {
         page: pageNumber,
-        pageSize: PAGE_SIZE,
+        pageSize: MOVIES_PAGE_SIZE,
+      },
+    };
+  };
+
+  const listMoviesByGenre = ({ genre, page }) => {
+    const normalizedGenre = String(genre);
+    const pageNumber = Number(page || 1);
+
+    const offset = (pageNumber - 1) * MOVIES_PAGE_SIZE;
+    const rows = moviesRepository.listByGenre({
+      genre: normalizedGenre,
+      limit: MOVIES_PAGE_SIZE,
+      offset,
+    });
+
+    return {
+      data: rows.map(formatListItem),
+      pagination: {
+        page: pageNumber,
+        pageSize: MOVIES_PAGE_SIZE,
       },
     };
   };
 
   const getMovieDetails = ({ movieId }) => {
     const parsedMovieId = Number(movieId);
-    if (!Number.isInteger(parsedMovieId) || parsedMovieId < 1) {
-      throw new Error("Path parameter 'movieId' must be a positive integer.");
-    }
 
     const movie = moviesRepository.findByMovieId({ movieId: parsedMovieId });
     if (!movie) {
@@ -106,6 +94,7 @@ const createMoviesService = ({ moviesRepository, ratingsRepository }) => {
   return {
     listAllMovies,
     listMoviesByYear,
+    listMoviesByGenre,
     getMovieDetails,
   };
 };

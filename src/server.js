@@ -1,8 +1,33 @@
 const { config } = require("./config");
-const { createAppRuntime } = require("./app");
+const { createDbRuntime } = require("./db");
+const { createMoviesService } = require("./services/movies");
+const { createMoviesRepository } = require("./repositories/movies");
+const { createRatingsRepository } = require("./repositories/ratings");
+const { createApp } = require("./app");
+
+const init = () => {
+  const dbRuntime = createDbRuntime({
+    moviesDbPath: config.moviesDbPath,
+    ratingsDbPath: config.ratingsDbPath,
+  });
+  const moviesRepository = createMoviesRepository({ moviesDb: dbRuntime.moviesDb });
+  const ratingsRepository = createRatingsRepository({
+    ratingsDb: dbRuntime.ratingsDb,
+  });
+  const moviesService = createMoviesService({
+    moviesRepository,
+    ratingsRepository,
+  });
+  const app = createApp({ moviesService });
+
+  return {
+    app,
+    close: dbRuntime.close,
+  };
+};
 
 function main() {
-  const { app, close } = createAppRuntime();
+  const { app, close } = init();
 
   const server = app.listen(config.port, () => {
     console.log(`movie-api listening on port ${config.port}`);
@@ -23,5 +48,6 @@ if (require.main === module) {
 }
 
 module.exports = {
+  init,
   main,
 };

@@ -1,10 +1,10 @@
 const request = require("supertest");
 
-const { createAppRuntime } = require("../src/app");
+const { init } = require("../src/server");
 
 describe("User Story: List All Movies", () => {
   test("GET /movies returns first page with required columns", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const response = await request(app).get("/movies");
@@ -22,7 +22,7 @@ describe("User Story: List All Movies", () => {
         "releaseDate",
         "budget",
       ]);
-      expect(firstMovie.budget).toMatch(/^\$[\d,]+$/);
+      expect(firstMovie.budget).toMatch(/^\$[\d,]+$/); //formats to dollar
       expect(Array.isArray(firstMovie.genres)).toBe(true);
       expect(firstMovie.genres.length).toBeGreaterThan(0);
       expect(firstMovie.genres[0]).toEqual(
@@ -37,11 +37,11 @@ describe("User Story: List All Movies", () => {
   });
 
   test("GET /movies?page=2 returns second page", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const page1 = await request(app).get("/movies?page=1");
-      const page2 = await request(app).get("/movies?page=2");
+      const page2 = await request(app).get("/movies?page=2"); //paginates
 
       expect(page2.status).toBe(200);
       expect(page2.body.pagination.page).toBe(2);
@@ -56,7 +56,7 @@ describe("User Story: List All Movies", () => {
 
 describe("User Story: Movie Details", () => {
   test("GET /movies/:movieId returns required movie details columns", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const response = await request(app).get("/movies/11");
@@ -71,7 +71,7 @@ describe("User Story: Movie Details", () => {
           releaseDate: expect.any(String),
           budget: expect.stringMatching(/^\$[\d,]+$/),
           runtime: expect.any(Number),
-          averageRating: expect.any(Number),
+          averageRating: expect.any(Number), //pulls rating from rating DB
           genres: expect.any(Array),
           originalLanguage: expect.any(String),
           productionCompanies: expect.any(Array),
@@ -96,7 +96,7 @@ describe("User Story: Movie Details", () => {
   });
 
   test("GET /movies/:movieId uses ratings from ratings database", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const response = await request(app).get("/movies/11");
@@ -111,7 +111,7 @@ describe("User Story: Movie Details", () => {
 
 describe("User Story: Movies By Year", () => {
   test("GET /movies/year/:year returns paginated movies with required columns in chronological order", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const response = await request(app).get("/movies/year/2014");
@@ -133,14 +133,14 @@ describe("User Story: Movies By Year", () => {
 
       const firstDate = response.body.data[0].releaseDate;
       const secondDate = response.body.data[1].releaseDate;
-      expect(firstDate <= secondDate).toBe(true);
+      expect(firstDate <= secondDate).toBe(true); //ascending order by default
     } finally {
       close();
     }
   });
 
   test("GET /movies/year/:year?page=2 returns the second page", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const page1 = await request(app).get("/movies/year/2014?page=1");
@@ -157,7 +157,7 @@ describe("User Story: Movies By Year", () => {
   });
 
   test("GET /movies/year/:year?sort=desc returns movies in descending release date order", async () => {
-    const { app, close } = createAppRuntime();
+    const { app, close } = init();
 
     try {
       const response = await request(app).get("/movies/year/2014?sort=desc");
@@ -167,7 +167,59 @@ describe("User Story: Movies By Year", () => {
 
       const firstDate = response.body.data[0].releaseDate;
       const secondDate = response.body.data[1].releaseDate;
-      expect(firstDate >= secondDate).toBe(true);
+      expect(firstDate >= secondDate).toBe(true); //descending order
+    } finally {
+      close();
+    }
+  });
+});
+
+describe("User Story: Movies By Genre", () => {
+  test("GET /movies/genre/:genre returns paginated movies with required columns", async () => {
+    const { app, close } = init();
+
+    try {
+      const response = await request(app).get("/movies/genre/Drama");
+
+      expect(response.status).toBe(200);
+      expect(response.body.pagination.page).toBe(1);
+      expect(response.body.pagination.pageSize).toBe(50);
+      expect(response.body.data.length).toBe(50);
+
+      const firstMovie = response.body.data[0];
+      expect(Object.keys(firstMovie)).toEqual([
+        "imdbId",
+        "title",
+        "genres",
+        "releaseDate",
+        "budget",
+      ]);
+      expect(firstMovie.budget).toMatch(/^\$[\d,]+$/);
+      expect(Array.isArray(firstMovie.genres)).toBe(true);
+      expect(//all movies returned are of the requested genre
+        response.body.data.every((movie) =>
+          movie.genres.some(
+            (genre) => String(genre.name).toLowerCase() === "drama"
+          )
+        )
+      ).toBe(true);
+    } finally {
+      close();
+    }
+  });
+
+  test("GET /movies/genre/:genre?page=2 returns the second page", async () => {
+    const { app, close } = init();
+
+    try {
+      const page1 = await request(app).get("/movies/genre/Drama?page=1");
+      const page2 = await request(app).get("/movies/genre/Drama?page=2");
+
+      expect(page2.status).toBe(200);
+      expect(page2.body.pagination.page).toBe(2);
+      expect(page2.body.pagination.pageSize).toBe(50);
+      expect(page2.body.data.length).toBe(50);
+      expect(page1.body.data[0].imdbId).not.toBe(page2.body.data[0].imdbId);
     } finally {
       close();
     }
