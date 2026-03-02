@@ -17,6 +17,25 @@ const createMoviesRouter = ({ moviesService }) => {
     }
   });
 
+  router.get("/year/:year", ({ params, query }, response, next) => {
+    try {
+      const { year } = params;
+      const { page, sort } = query;
+      const result = moviesService.listMoviesByYear({ year, page, sort });
+      response.json(result);
+    } catch (error) {
+      if (
+        error.message.includes("year") ||
+        error.message.includes("page") ||
+        error.message.includes("sort")
+      ) {
+        response.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  });
+
   router.get("/:movieId", ({ params }, response, next) => {
     try {
       const { movieId } = params;
