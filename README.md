@@ -6,3 +6,4 @@
   3. Configuration is environment-driven via .env files for local/dev setup.
   4. Added integration tests per user story, with assertions mapped to ACs.
   5. Added Zod to coerce/validate request parameters at the route level.
+  6. This wasn't in the AC, but I am returning movieId as well, so that the end-user will can see the ID used to lookup moviedDetails
