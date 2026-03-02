@@ -1,15 +1,17 @@
 const { config } = require("./config");
-const { createApp } = require("./app");
+const { createAppRuntime } = require("./app");
 
 function main() {
-  const app = createApp();
+  const { app, close } = createAppRuntime();
 
   const server = app.listen(config.port, () => {
     console.log(`movie-api listening on port ${config.port}`);
   });
 
   const shutdown = () => {
-    server.close();
+    server.close(() => {
+      close();
+    });
   };
 
   process.on("SIGINT", shutdown);
