@@ -51,3 +51,56 @@ test("GET /movies?page=2 returns second page", async () => {
     close();
   }
 });
+
+test("GET /movies/:movieId returns required movie details columns", async () => {
+  const { app, close } = createAppRuntime();
+
+  try {
+    const response = await request(app).get("/movies/11");
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        movieId: 11,
+        imdbId: expect.any(String),
+        title: expect.any(String),
+        description: expect.any(String),
+        releaseDate: expect.any(String),
+        budget: expect.stringMatching(/^\$[\d,]+$/),
+        runtime: expect.any(Number),
+        averageRating: expect.any(Number),
+        genres: expect.any(Array),
+        originalLanguage: expect.any(String),
+        productionCompanies: expect.any(Array),
+      })
+    );
+
+    expect(response.body.genres[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(Number),
+        name: expect.any(String),
+      })
+    );
+    expect(response.body.productionCompanies[0]).toEqual(
+      expect.objectContaining({
+        id: expect.any(Number),
+        name: expect.any(String),
+      })
+    );
+  } finally {
+    close();
+  }
+});
+
+test("GET /movies/:movieId uses ratings from ratings database", async () => {
+  const { app, close } = createAppRuntime();
+
+  try {
+    const response = await request(app).get("/movies/11");
+
+    expect(response.status).toBe(200);
+    expect(response.body.averageRating).toBeCloseTo(3.689, 3);
+  } finally {
+    close();
+  }
+});

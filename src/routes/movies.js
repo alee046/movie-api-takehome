@@ -17,6 +17,26 @@ const createMoviesRouter = ({ moviesService }) => {
     }
   });
 
+  router.get("/:movieId", ({ params }, response, next) => {
+    try {
+      const { movieId } = params;
+      const movieDetails = moviesService.getMovieDetails({ movieId });
+
+      if (!movieDetails) {
+        response.status(404).json({ error: "Movie not found." });
+        return;
+      }
+
+      response.json(movieDetails);
+    } catch (error) {
+      if (error.message.includes("movieId")) {
+        response.status(400).json({ error: error.message });
+        return;
+      }
+      next(error);
+    }
+  });
+
   return router;
 };
 

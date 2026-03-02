@@ -1,24 +1,9 @@
 const PAGE_SIZE = 50;
 
-const parseGenres = (rawGenres) => {
-  if (!rawGenres) {
-    return [];
-  }
-
+const parseJsonArray = (rawValue) => {
   try {
-    const parsedGenres = JSON.parse(rawGenres);
-    if (!Array.isArray(parsedGenres)) {
-      return [];
-    }
-
-    return parsedGenres
-      .map(({ id, name }) => ({
-        id: Number(id),
-        name: typeof name === "string" ? name.trim() : "",
-      }))
-      .filter(
-        ({ id, name }) => Number.isInteger(id) && name.length > 0
-      );
+    const parsed = JSON.parse(rawValue || "[]");
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -27,7 +12,7 @@ const parseGenres = (rawGenres) => {
 const formatBudget = (budget) =>
   `$${Number(budget || 0).toLocaleString("en-US")}`;
 
-const createMoviesService = ({ moviesRepository }) => {
+const createMoviesService = ({ moviesRepository, ratingsRepository }) => {
   const listAllMovies = ({ page }) => {
     const pageNumber = Number(page || 1);
     if (!Number.isInteger(pageNumber) || pageNumber < 1) {
@@ -41,7 +26,7 @@ const createMoviesService = ({ moviesRepository }) => {
       data: rows.map(({ imdbId, title, genres, releaseDate, budget }) => ({
         imdbId,
         title,
-        genres: parseGenres(genres),
+        genres: parseJsonArray(genres),
         releaseDate,
         budget: formatBudget(budget),
       })),
@@ -52,8 +37,40 @@ const createMoviesService = ({ moviesRepository }) => {
     };
   };
 
+  const getMovieDetails = ({ movieId }) => {
+    const parsedMovieId = Number(movieId);
+    if (!Number.isInteger(parsedMovieId) || parsedMovieId < 1) {
+      throw new Error("Path parameter 'movieId' must be a positive integer.");
+    }
+
+    const movie = moviesRepository.findByMovieId({ movieId: parsedMovieId });
+    if (!movie) {
+      return null;
+    }
+
+    const ratingAggregate = ratingsRepository.getAverageForMovieId({
+      movieId: parsedMovieId,
+    });
+    const averageRating = Number(ratingAggregate?.averageRating || 0);
+
+    return {
+      movieId: movie.movieId,
+      imdbId: movie.imdbId,
+      title: movie.title,
+      description: movie.overview || "",
+      releaseDate: movie.releaseDate,
+      budget: formatBudget(movie.budget),
+      runtime: Number(movie.runtime || 0),
+      averageRating,
+      genres: parseJsonArray(movie.genres),
+      originalLanguage: movie.language || "",
+      productionCompanies: parseJsonArray(movie.productionCompanies),
+    };
+  };
+
   return {
     listAllMovies,
+    getMovieDetails,
   };
 };
 

@@ -9,7 +9,8 @@ dotenv.config({
 const config = {
   port: Number(process.env.PORT || 3000),
   logLevel: process.env.LOG_LEVEL || "info",
-  moviesDbPath: path.resolve(process.cwd(), process.env.MOVIES_DB_PATH || "./db/movies.db"),
+  moviesDbPath: path.resolve(process.env.MOVIES_DB_PATH || "./db/movies.db"),
+  ratingsDbPath: path.resolve(process.env.RATINGS_DB_PATH || "./db/ratings.db"),
 };
 
 module.exports = {

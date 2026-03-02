@@ -5,9 +5,15 @@ const createMoviesRepository = ({ moviesDb }) => {
      ORDER BY movieId ASC
      LIMIT ? OFFSET ?`
   );
+  const movieDetailsStatement = moviesDb.prepare(
+    `SELECT movieId, imdbId, title, overview, releaseDate, budget, runtime, language, genres, productionCompanies
+     FROM movies
+     WHERE movieId = ?`
+  );
 
   return {
     listAll: ({ limit, offset }) => listMoviesStatement.all(limit, offset),
+    findByMovieId: ({ movieId }) => movieDetailsStatement.get(movieId),
   };
 };
 

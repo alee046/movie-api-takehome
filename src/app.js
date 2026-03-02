@@ -4,6 +4,7 @@ const { config } = require("./config");
 const { createMoviesRouter } = require("./routes/movies");
 const { createMoviesService } = require("./services/movies");
 const { createMoviesRepository } = require("./repositories/movies");
+const { createRatingsRepository } = require("./repositories/ratings");
 
 const createApp = ({ moviesService }) => {
   const app = express();
@@ -24,15 +25,23 @@ const createApp = ({ moviesService }) => {
 };
 
 const createAppRuntime = () => {
-  const { moviesDbPath } = config;
+  const { moviesDbPath, ratingsDbPath } = config;
   const moviesDb = new Database(moviesDbPath, { readonly: true });
+  const ratingsDb = new Database(ratingsDbPath, { readonly: true });
   const moviesRepository = createMoviesRepository({ moviesDb });
-  const moviesService = createMoviesService({ moviesRepository });
+  const ratingsRepository = createRatingsRepository({ ratingsDb });
+  const moviesService = createMoviesService({
+    moviesRepository,
+    ratingsRepository,
+  });
   const app = createApp({ moviesService });
 
   return {
     app,
-    close: () => moviesDb.close(),
+    close: () => {
+      moviesDb.close();
+      ratingsDb.close();
+    },
   };
 };
 
